@@ -1,5 +1,5 @@
 import { Alert, ScrollView, Text, View } from 'react-native';
-import { styles } from './style'
+import { styles } from './style';
 import { Ingredient } from '@/components/Ingredient';
 import { useEffect, useState } from 'react';
 import { Selected } from '@/components/Selected';
@@ -8,7 +8,6 @@ import { Loading } from '@/components/Loading';
 import { router } from 'expo-router';
 import { IIngredient } from '@/@types/ingredients';
 
-
 const App = () => {
     const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
     const [ingredients, setIngredients] = useState<IIngredient[]>([]);
@@ -16,33 +15,37 @@ const App = () => {
 
     const handleToggleSelected = (value: string) => {
         if (selectedIngredients.includes(value)) {
-            return setSelectedIngredients((state) => state.filter(ingredient => ingredient !== value));
+            setSelectedIngredients(state => state.filter(ingredient => ingredient !== value));
+        } else {
+            setSelectedIngredients(state => [...state, value]);
         }
-        setSelectedIngredients((state) => [...state, value]);
-    }
+    };
 
     const onSearch = () => {
-
-        router.navigate({
+        router.push({
             pathname: 'recipes',
             params: { selectedIngredients }
         });
-    }
+    };
 
     const clearSelectedIngredients = () => {
         Alert.alert('Limpar', 'Tem certeza que deseja limpar tudo?', [
             { text: 'Não', style: 'cancel' },
             { text: 'Sim', onPress: () => setSelectedIngredients([]) },
         ]);
-    }
+    };
 
     useEffect(() => {
         setIsLoading(true);
         const getIngredients = async () => {
-            const data = await services.ingredients.getAll();
-
-            setIngredients(data);
-            setIsLoading(false);
+            try {
+                const data = await services.ingredients.getAll();
+                setIngredients(data);
+            } catch (error) {
+                console.error('Failed to fetch ingredients:', error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
         getIngredients();
@@ -60,23 +63,17 @@ const App = () => {
             {isLoading ? (
                 <Loading />
             ) : (
-                <ScrollView
-                    contentContainerStyle={styles.containerIngredients}
-                >
+                <ScrollView contentContainerStyle={styles.containerIngredients}>
                     <View style={styles.containerIngredients}>
-
-                        {ingredients.map((ingredient, index) => {
-                            return (
-                                <Ingredient
-                                    onPress={() => handleToggleSelected(ingredient.id)}
-                                    key={index}
-                                    name={ingredient.name}
-                                    image={`${services.storage.imagePath}${ingredient.image}`}
-                                    selected={selectedIngredients.includes(ingredient.id) ? true : false}
-                                />
-                            )
-                        })}
-
+                        {ingredients.map((ingredient) => (
+                            <Ingredient
+                                onPress={() => handleToggleSelected(ingredient.id)}
+                                key={ingredient.id}
+                                name={ingredient.name}
+                                image={`${services.storage.imagePath}${ingredient.image}`}
+                                selected={selectedIngredients.includes(ingredient.id)}
+                            />
+                        ))}
                     </View>
                 </ScrollView>
             )}
@@ -90,6 +87,6 @@ const App = () => {
             )}
         </View>
     );
-}
+};
 
 export default App;
